@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,24 +25,24 @@ import org.interview.xml2csv.XMLConverter;
 
 @Controller
 public class UploadController {
+  private final Logger logger = LoggerFactory.getLogger(UploadController.class);
 
   @RequestMapping(path="/", method=RequestMethod.GET)
   public String root() {
     return "root";
   }
 
-  @RequestMapping(path="/upload_xml", method=RequestMethod.POST, consumes=MediaType.ALL_VALUE)
+  @RequestMapping(path="/upload_xml", method=RequestMethod.POST)
   public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file) {
     File xmlfp;
     Path xmlfp_path;
     try {
       // Receive the file
-      System.out.println(String.format("\033[33m%s\033[m", new String(file.getBytes())));
       xmlfp_path = Files.createTempFile(file.getName(), ".xml");
       xmlfp = new File(xmlfp_path.toString());
       file.transferTo(xmlfp);
     } catch (IOException ex) {
-      System.err.println(ex.getMessage());
+      logger.error(ex.getMessage());
       return new ResponseEntity<>(HttpStatus.INSUFFICIENT_STORAGE);
     }
     XMLConverter converter = new XMLConverter();
@@ -51,13 +53,14 @@ public class UploadController {
 
   private ResponseEntity<Object> getFileResponse(File fp) {
     if (fp == null) {
+      logger.info("Bad format received");
       return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
     }
     InputStreamResource istream;
     try {
       istream = new InputStreamResource(new FileInputStream(fp));
     } catch (FileNotFoundException ex) {
-      System.out.print(ex);
+      logger.error(ex.getMessage());
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
     HttpHeaders headers = new HttpHeaders();

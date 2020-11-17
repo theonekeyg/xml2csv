@@ -15,12 +15,16 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class XMLConverter {
+  private final Logger logger = LoggerFactory.getLogger(XMLConverter.class);
   private HashSet<String> csv_headers = new HashSet<String>(10);
   private LinkedList<HashMap<String, String>> csv_values = new LinkedList<HashMap<String, String>>();
   // javax.xml's parser matches closing node as a Node.TEXT_NODE no matter if it contains
   // text or not. This workaround is mandatory for skipping these nodes.
-  private final Pattern skip_pattern = Pattern.compile("\n\\s+");
+  private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
   private void _parseLoop(Node node, HashMap<String, String> map, String head) {
     NodeList childs = node.getChildNodes();
@@ -30,7 +34,7 @@ class XMLConverter {
         _parseLoop(childs.item(i), map, new_head);
       }
     } else {
-      Matcher skip_matcher = skip_pattern.matcher(node.getNodeValue());
+      Matcher skip_matcher = SKIP_PATTERN.matcher(node.getNodeValue());
       String node_val = node.getNodeValue();
       // Decline closing nodes and nodes containing commas
       if (node.getNodeType() == Node.TEXT_NODE && !skip_matcher.matches() && !node_val.contains(",")) {
@@ -70,7 +74,7 @@ class XMLConverter {
       }
       writer.flush();
     } catch (IOException ex) {
-      System.err.println(ex.getMessage());
+      logger.error(ex.getMessage());
       return null;
     }
     return csvfp;
@@ -96,7 +100,7 @@ class XMLConverter {
         csv_values.add(parseElement(all_elems.item(i)));
       }
     } catch (Exception ex) {
-      System.err.println(ex.getMessage());
+      logger.error(ex.getMessage());
       if (csvfp.exists()) csvfp.delete();
       return null;
     }
