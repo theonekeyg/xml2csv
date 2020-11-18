@@ -25,8 +25,8 @@
             formData.append("file", file);
             try {
                 let res = await fetch("http://localhost:8080/upload_xml",
-                  { method: "POST",
-                    body: formData });
+                    { method: "POST",
+                      body: formData });
                 let data = await res.text();
                 if (res.status == 200 && data != "") {
                     console.log(data);

@@ -51,14 +51,14 @@ public class UploadController {
         return getFileResponse(csvfp);
     }
 
-    private ResponseEntity<Object> getFileResponse(File file_ptr) {
-        if (file_ptr == null) {
+    private ResponseEntity<Object> getFileResponse(File file) {
+        if (file == null) {
             logger.info("Bad format received");
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
         InputStreamResource istream;
         try {
-            istream = new InputStreamResource(new FileInputStream(file_ptr));
+            istream = new InputStreamResource(new FileInputStream(file));
         } catch (FileNotFoundException ex) {
             logger.error(ex.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -66,17 +66,17 @@ public class UploadController {
         HttpHeaders headers = new HttpHeaders();
 
         headers.add("Content-Disposition",
-                    String.format("attachment; filename=\"%s\"", file_ptr.getName()));
+                    String.format("attachment; filename=\"%s\"", file.getName()));
         headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
         headers.add("Pragma", "no-cache");
         headers.add("Expires", "0");
 
         ResponseEntity<Object>
         response = ResponseEntity.ok().headers(headers)
-                       .contentLength(file_ptr.length())
+                       .contentLength(file.length())
                        .contentType(MediaType.parseMediaType("application/txt"))
                        .body(istream);
-        if (file_ptr.exists()) file_ptr.delete();
+        if (file.exists()) file.delete();
         return response;
     }
 }

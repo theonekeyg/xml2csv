@@ -45,7 +45,7 @@ class XMLConverter {
         } else {
             Matcher skipMatcher = SKIP_PATTERN.matcher(node.getNodeValue());
             String nodeVal = node.getNodeValue();
-            /* Ignore closing nodes */
+            /* Decline closing nodes and nodes containing commas */
             if (node.getNodeType() == Node.TEXT_NODE && !skipMatcher.matches()) {
                 head = head.substring(0, head.length()-2);
                 if (!csvHeaders.contains(head)) {
@@ -58,13 +58,16 @@ class XMLConverter {
 
     private HashMap parseElement(Node node) {
         HashMap<String, String> map = new HashMap<String, String>();
-        parseLoop(node, map, "");
+        NodeList childs = node.getChildNodes();
+        for (int i = 0; i < childs.getLength(); ++i) {
+            parseLoop(childs.item(i), map, "");
+        }
         return map;
     }
 
     private File dumpToCSV(File csvfp) {
         try {
-            Boolean rowStart = true;
+            boolean rowStart = true;
             FileWriter writer = new FileWriter(csvfp);
             /* Write headers */
             for (String header : csvHeaders) {
