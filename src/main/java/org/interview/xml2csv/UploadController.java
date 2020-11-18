@@ -29,7 +29,7 @@ public class UploadController {
 
     @RequestMapping(path="/", method=RequestMethod.GET)
     public String root() {
-        return "root";
+        return "root.html";
     }
 
     @RequestMapping(path="/upload_xml", method=RequestMethod.POST)

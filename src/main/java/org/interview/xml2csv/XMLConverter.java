@@ -45,7 +45,7 @@ class XMLConverter {
         } else {
             Matcher skipMatcher = SKIP_PATTERN.matcher(node.getNodeValue());
             String nodeVal = node.getNodeValue();
-            /* Decline closing nodes and nodes containing commas */
+            /* Ignore closing nodes */
             if (node.getNodeType() == Node.TEXT_NODE && !skipMatcher.matches()) {
                 head = head.substring(0, head.length()-2);
                 if (!csvHeaders.contains(head)) {
@@ -64,7 +64,7 @@ class XMLConverter {
 
     private File dumpToCSV(File csvfp) {
         try {
-            boolean rowStart = true;
+            Boolean rowStart = true;
             FileWriter writer = new FileWriter(csvfp);
             /* Write headers */
             for (String header : csvHeaders) {
