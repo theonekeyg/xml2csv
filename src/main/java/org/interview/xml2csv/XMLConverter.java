@@ -66,50 +66,44 @@ class XMLConverter {
         return map;
     }
 
-    private File dumpToCSV(File csvfp) {
-        try {
-            boolean rowStart = true;
-            FileWriter writer = new FileWriter(csvfp);
-            /* Write headers */
+    private String dumpToCSV() {
+        StringBuilder csvBuilder = new StringBuilder();
+        boolean rowStart = true;
+
+        /* Write headers */
+        for (String header : csvHeaders) {
+            if (rowStart) {
+                csvBuilder.append(header);
+                rowStart = false;
+            } else {
+                csvBuilder.append("," + header);
+            }
+        }
+        csvBuilder.append("\n");
+        rowStart = true;
+
+        /* Write the rest */
+        for (HashMap row : csvValues) {
             for (String header : csvHeaders) {
+                String val = "";
+                if (row.containsKey(header)) {
+                    val = ((String) row.get(header)).replace(',', (char) 0);
+                }
                 if (rowStart) {
-                    writer.write(header);
+                    csvBuilder.append(val);
                     rowStart = false;
                 } else {
-                    writer.write("," + header);
+                    csvBuilder.append("," + val);
                 }
             }
-            writer.write("\n");
+            csvBuilder.append("\n");
             rowStart = true;
-            /* Write the rest */
-            for (HashMap row : csvValues) {
-                for (String header : csvHeaders) {
-                    String val = "";
-                    if (row.containsKey(header)) {
-                        val = ((String) row.get(header)).replace(',', (char) 0);
-                    }
-                    if (rowStart) {
-                        writer.write(val);
-                        rowStart = false;
-                    } else {
-                        writer.write("," + val);
-                    }
-                }
-                writer.write("\n");
-                rowStart = true;
-            }
-            writer.flush();
-        } catch (IOException ex) {
-            logger.error(ex.getMessage(), ex);
-            return null;
         }
-        return csvfp;
+        return csvBuilder.toString();
     }
 
-    public File toCSV(File xmlfp, String baseName) throws SAXParseException {
-        File csvfp = null;
+    public String toCSV(File xmlfp) throws SAXParseException {
         try {
-            csvfp = new File(Files.createTempFile(baseName, ".csv").toString());
             final DocumentBuilderFactory factory
                 = DocumentBuilderFactory.newInstance();
             final DocumentBuilder builder = factory.newDocumentBuilder();
@@ -117,7 +111,6 @@ class XMLConverter {
 
             final NodeList allNodes = xmldoc.getElementsByTagName("*");
             if (allNodes.getLength() < 3) {
-                csvfp.delete();
                 return null;
             }
             Node firstElem = allNodes.item(1);
@@ -128,14 +121,12 @@ class XMLConverter {
                 csvValues.add(parseElement(allElems.item(i)));
             }
         } catch (SAXParseException ex) {
-            if (csvfp.exists()) csvfp.delete();
             throw ex;
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
-            if (csvfp.exists()) csvfp.delete();
             return null;
         }
-        return dumpToCSV(csvfp);
+        return dumpToCSV();
     }
 }
 

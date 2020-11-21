@@ -46,44 +46,27 @@ public class UploadController {
             return new ResponseEntity<>(HttpStatus.INSUFFICIENT_STORAGE);
         }
         XMLConverter converter = new XMLConverter();
-        File csvfp = null;
+        String csvOut = null;
         try {
-            csvfp = converter.toCSV(xmlfp, file.getName());
+            csvOut = converter.toCSV(xmlfp);
         } catch (SAXParseException ex) {
             String errmsg = ex.toString();
-            logger.error(errmsg, ex);
+            logger.info("Bad file format received: " + errmsg);
             if (xmlfp.exists()) xmlfp.delete();
             return new ResponseEntity<>(errmsg, HttpStatus.EXPECTATION_FAILED);
         }
         if (xmlfp.exists()) xmlfp.delete();
-        return getFileResponse(csvfp);
+        return makeFileResponse(csvOut);
     }
 
-    private ResponseEntity<Object> getFileResponse(File file) {
-        if (file == null) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        InputStreamResource istream;
-        try {
-            istream = new InputStreamResource(new FileInputStream(file));
-        } catch (FileNotFoundException ex) {
-            logger.error(ex.getMessage(), ex);
+    private ResponseEntity makeFileResponse(String body) {
+        if (body == null) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=output.csv");
 
-        headers.add("Content-Disposition",
-                    String.format("attachment; filename=\"%s\"", file.getName()));
-        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-        headers.add("Pragma", "no-cache");
-        headers.add("Expires", "0");
-
-        ResponseEntity<Object>
-        response = ResponseEntity.ok().headers(headers)
-                       .contentLength(file.length())
-                       .contentType(MediaType.parseMediaType("application/txt"))
-                       .body(istream);
-        if (file.exists()) file.delete();
+        ResponseEntity response = new ResponseEntity<>(body, headers, HttpStatus.OK);
         return response;
     }
 }
