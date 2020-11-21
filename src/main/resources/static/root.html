@@ -34,7 +34,9 @@
                 } else if (res.status == 417) {
                     alert("bad file format: " + data);
                 } else {
-                    alert("Internal server erorr");
+                    let errmsg = "Internal server erorr";
+                    if (data != "") errmsg += ": " + data;
+                    alert(errmsg);
                 }
                 console.log(res);
             } catch(ex) {

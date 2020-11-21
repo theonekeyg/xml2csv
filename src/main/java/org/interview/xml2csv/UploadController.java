@@ -34,7 +34,9 @@ public class UploadController {
     }
 
     @RequestMapping(path="/upload_xml", method=RequestMethod.POST)
-    public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file,
+            @RequestParam(name="outType", required=false, defaultValue="csv")
+            String outType) {
         File xmlfp;
         Path xmlfpPath;
         try {
@@ -61,8 +63,16 @@ public class UploadController {
             if (xmlfp.exists()) xmlfp.delete();
         }
 
-        String csvOut = converter.toCSV();
-        return makeFileResponse(csvOut);
+        String outHolder = null;
+        if (outType.equals("csv")) {
+            outHolder = converter.toCSV();
+        } else {
+            return new ResponseEntity<>(
+                    String.format("output file format `%s` is not implemented", outType),
+                    HttpStatus.NOT_IMPLEMENTED
+            );
+        }
+        return makeFileResponse(outHolder);
     }
 
     private ResponseEntity makeFileResponse(String body) {

@@ -39,10 +39,9 @@ class XMLConverter {
     private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
     public XMLConverter(File xmlfp) throws SAXParseException, SAXException,
-                                           ParserConfigurationException,
-                                           IOException {
-        final DocumentBuilderFactory factory
-            = DocumentBuilderFactory.newInstance();
+                                           ParserConfigurationException, IOException {
+
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder builder = factory.newDocumentBuilder();
         final Document xmldoc = builder.parse(xmlfp);
 
@@ -51,8 +50,7 @@ class XMLConverter {
             throw new SAXException("too few xml rows");
         }
         Node firstElem = allNodes.item(1);
-        NodeList allElems = xmldoc.getElementsByTagName(
-                                firstElem.getNodeName());
+        NodeList allElems = xmldoc.getElementsByTagName(firstElem.getNodeName());
 
         for (int i = 0; i < allElems.getLength(); ++i) {
             csvValues.add(parseElement(allElems.item(i)));
@@ -63,8 +61,7 @@ class XMLConverter {
         NodeList childs = node.getChildNodes();
         if (childs.getLength() > 0) {
             for (int i = 0; i < childs.getLength(); ++i) {
-                String newHead = head.concat(String.format("%s__",
-                                              node.getNodeName()));
+                String newHead = head.concat(String.format("%s__", node.getNodeName()));
                 parseLoop(childs.item(i), map, newHead);
             }
         } else {
