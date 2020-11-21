@@ -4,10 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,18 +38,16 @@ public class UploadController {
     public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file,
             @RequestParam(name="outType", required=false, defaultValue="csv")
             String outType) {
-        File xmlfp;
-        Path xmlfpPath;
+        InputStream xmlfp;
+        /* Receive the file */
         try {
-            /* Receive the file */
-            xmlfpPath = Files.createTempFile(file.getName(), ".xml");
-            xmlfp = new File(xmlfpPath.toString());
-            file.transferTo(xmlfp);
+            xmlfp = file.getInputStream();
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
-            return new ResponseEntity<>(HttpStatus.INSUFFICIENT_STORAGE);
+            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
 
+        /* Parse the .xml file */
         XMLConverter converter;
         try {
             converter = new XMLConverter(xmlfp);
@@ -59,10 +58,9 @@ public class UploadController {
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            if (xmlfp.exists()) xmlfp.delete();
         }
 
+        /* Convert file into output format */
         String outHolder = null;
         if (outType.equals("csv")) {
             outHolder = converter.toCSV();

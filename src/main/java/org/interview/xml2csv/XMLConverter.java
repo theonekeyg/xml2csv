@@ -2,6 +2,7 @@ package org.interview.xml2csv;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ class XMLConverter {
      */
     private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
-    public XMLConverter(File xmlfp) throws SAXParseException, SAXException,
+    public XMLConverter(InputStream xmlfp) throws SAXParseException, SAXException,
                                            ParserConfigurationException, IOException {
 
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
