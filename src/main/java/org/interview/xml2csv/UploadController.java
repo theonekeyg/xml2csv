@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.SAXException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +46,22 @@ public class UploadController {
             logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.INSUFFICIENT_STORAGE);
         }
-        XMLConverter converter = new XMLConverter();
-        String csvOut = null;
+
+        XMLConverter converter;
         try {
-            csvOut = converter.toCSV(xmlfp);
-        } catch (SAXParseException ex) {
+            converter = new XMLConverter(xmlfp);
+        } catch (SAXException ex) {
             String errmsg = ex.toString();
             logger.info("Bad file format received: " + errmsg);
-            if (xmlfp.exists()) xmlfp.delete();
             return new ResponseEntity<>(errmsg, HttpStatus.EXPECTATION_FAILED);
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(), ex);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            if (xmlfp.exists()) xmlfp.delete();
         }
-        if (xmlfp.exists()) xmlfp.delete();
+
+        String csvOut = converter.toCSV();
         return makeFileResponse(csvOut);
     }
 

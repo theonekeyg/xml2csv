@@ -11,10 +11,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.xml.sax.SAXParseException;
+import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,27 @@ class XMLConverter {
      */
     private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
+    public XMLConverter(File xmlfp) throws SAXParseException, SAXException,
+                                           ParserConfigurationException,
+                                           IOException {
+        final DocumentBuilderFactory factory
+            = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder builder = factory.newDocumentBuilder();
+        final Document xmldoc = builder.parse(xmlfp);
+
+        final NodeList allNodes = xmldoc.getElementsByTagName("*");
+        if (allNodes.getLength() < 3) {
+            throw new SAXException("too few xml rows");
+        }
+        Node firstElem = allNodes.item(1);
+        NodeList allElems = xmldoc.getElementsByTagName(
+                                firstElem.getNodeName());
+
+        for (int i = 0; i < allElems.getLength(); ++i) {
+            csvValues.add(parseElement(allElems.item(i)));
+        }
+    }
+
     private void parseLoop(Node node, HashMap<String, String> map, String head) {
         NodeList childs = node.getChildNodes();
         if (childs.getLength() > 0) {
@@ -46,7 +70,7 @@ class XMLConverter {
         } else {
             Matcher skipMatcher = SKIP_PATTERN.matcher(node.getNodeValue());
             String nodeVal = node.getNodeValue();
-            /* Decline closing nodes and nodes containing commas */
+            /* Decline closing nodes */
             if (node.getNodeType() == Node.TEXT_NODE && !skipMatcher.matches()) {
                 head = head.substring(0, head.length()-2);
                 if (!csvHeaders.contains(head)) {
@@ -66,7 +90,7 @@ class XMLConverter {
         return map;
     }
 
-    private String dumpToCSV() {
+    public String toCSV() {
         StringBuilder csvBuilder = new StringBuilder();
         boolean rowStart = true;
 
@@ -100,33 +124,6 @@ class XMLConverter {
             rowStart = true;
         }
         return csvBuilder.toString();
-    }
-
-    public String toCSV(File xmlfp) throws SAXParseException {
-        try {
-            final DocumentBuilderFactory factory
-                = DocumentBuilderFactory.newInstance();
-            final DocumentBuilder builder = factory.newDocumentBuilder();
-            final Document xmldoc = builder.parse(xmlfp);
-
-            final NodeList allNodes = xmldoc.getElementsByTagName("*");
-            if (allNodes.getLength() < 3) {
-                return null;
-            }
-            Node firstElem = allNodes.item(1);
-            NodeList allElems = xmldoc.getElementsByTagName(
-                                    firstElem.getNodeName());
-
-            for (int i = 0; i < allElems.getLength(); ++i) {
-                csvValues.add(parseElement(allElems.item(i)));
-            }
-        } catch (SAXParseException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            logger.error(ex.getMessage(), ex);
-            return null;
-        }
-        return dumpToCSV();
     }
 }
 
