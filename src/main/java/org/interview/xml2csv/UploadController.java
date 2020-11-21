@@ -3,10 +3,10 @@ package org.interview.xml2csv;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.xml.sax.SAXParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,25 +42,32 @@ public class UploadController {
             xmlfp = new File(xmlfpPath.toString());
             file.transferTo(xmlfp);
         } catch (IOException ex) {
-            logger.error(ex.getMessage());
+            logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.INSUFFICIENT_STORAGE);
         }
         XMLConverter converter = new XMLConverter();
-        File csvfp = converter.toCSV(xmlfp, file.getName());
+        File csvfp = null;
+        try {
+            csvfp = converter.toCSV(xmlfp, file.getName());
+        } catch (SAXParseException ex) {
+            String errmsg = ex.toString();
+            logger.error(errmsg, ex);
+            if (xmlfp.exists()) xmlfp.delete();
+            return new ResponseEntity<>(errmsg, HttpStatus.EXPECTATION_FAILED);
+        }
         if (xmlfp.exists()) xmlfp.delete();
         return getFileResponse(csvfp);
     }
 
     private ResponseEntity<Object> getFileResponse(File file) {
         if (file == null) {
-            logger.info("Bad format received");
-            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         InputStreamResource istream;
         try {
             istream = new InputStreamResource(new FileInputStream(file));
         } catch (FileNotFoundException ex) {
-            logger.error(ex.getMessage());
+            logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         HttpHeaders headers = new HttpHeaders();

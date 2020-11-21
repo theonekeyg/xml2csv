@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import org.xml.sax.SAXParseException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -99,13 +100,13 @@ class XMLConverter {
             }
             writer.flush();
         } catch (IOException ex) {
-            logger.error(ex.getMessage());
+            logger.error(ex.getMessage(), ex);
             return null;
         }
         return csvfp;
     }
 
-    public File toCSV(File xmlfp, String baseName) {
+    public File toCSV(File xmlfp, String baseName) throws SAXParseException {
         File csvfp = null;
         try {
             csvfp = new File(Files.createTempFile(baseName, ".csv").toString());
@@ -126,8 +127,11 @@ class XMLConverter {
             for (int i = 0; i < allElems.getLength(); ++i) {
                 csvValues.add(parseElement(allElems.item(i)));
             }
+        } catch (SAXParseException ex) {
+            if (csvfp.exists()) csvfp.delete();
+            throw ex;
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
+            logger.error(ex.getMessage(), ex);
             if (csvfp.exists()) csvfp.delete();
             return null;
         }

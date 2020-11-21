@@ -31,8 +31,10 @@
                 if (res.status == 200 && data != "") {
                     console.log(data);
                     saveFile(data, "output.csv", "application/text");
+                } else if (res.status == 417) {
+                    alert("bad file format: " + data);
                 } else {
-                    alert("bad file format");
+                    alert("Internal server erorr");
                 }
                 console.log(res);
             } catch(ex) {
