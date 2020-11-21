@@ -1,10 +1,7 @@
 package org.interview.xml2csv;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,7 +13,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -33,18 +29,18 @@ class XMLConverter {
         = new LinkedList<HashMap<String, String>>();
 
     /*
-     * javax.xml's parser matches closing node as a Node.TEXT_NODE no matter if
-     * it contains text or not. This workaround is mandatory for skipping these
-     * nodes.
+     * javax.xml's parser matches every closing node as a Node.TEXT_NODE.
+     * This workaround is mandatory for skipping these nodes.
      */
     private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
-    public XMLConverter(InputStream xmlfp) throws SAXParseException, SAXException,
-                                           ParserConfigurationException, IOException {
+    public XMLConverter(InputStream xml_istream) throws SAXParseException, SAXException,
+                                                 ParserConfigurationException,
+                                                 IOException {
 
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder builder = factory.newDocumentBuilder();
-        final Document xmldoc = builder.parse(xmlfp);
+        final Document xmldoc = builder.parse(xml_istream);
 
         final NodeList allNodes = xmldoc.getElementsByTagName("*");
         if (allNodes.getLength() < 3) {
@@ -58,27 +54,6 @@ class XMLConverter {
         }
     }
 
-    private void parseLoop(Node node, HashMap<String, String> map, String head) {
-        NodeList childs = node.getChildNodes();
-        if (childs.getLength() > 0) {
-            for (int i = 0; i < childs.getLength(); ++i) {
-                String newHead = head.concat(String.format("%s__", node.getNodeName()));
-                parseLoop(childs.item(i), map, newHead);
-            }
-        } else {
-            Matcher skipMatcher = SKIP_PATTERN.matcher(node.getNodeValue());
-            String nodeVal = node.getNodeValue();
-            /* Decline closing nodes */
-            if (node.getNodeType() == Node.TEXT_NODE && !skipMatcher.matches()) {
-                head = head.substring(0, head.length()-2);
-                if (!csvHeaders.contains(head)) {
-                    csvHeaders.add(head);
-                }
-                map.put(head, nodeVal);
-            }
-        }
-    }
-
     private HashMap parseElement(Node node) {
         HashMap<String, String> map = new HashMap<String, String>();
         NodeList childs = node.getChildNodes();
@@ -86,6 +61,30 @@ class XMLConverter {
             parseLoop(childs.item(i), map, "");
         }
         return map;
+    }
+
+    private void parseLoop(Node node, HashMap<String, String> map, String ascendName) {
+        NodeList childs = node.getChildNodes();
+        if (childs.getLength() > 0) {
+            for (int i = 0; i < childs.getLength(); ++i) {
+                String newName = String.format("%s__", ascendName.concat(node.getNodeName()));
+                parseLoop(childs.item(i), map, newName);
+            }
+        } else {
+            String nodeVal = node.getNodeValue();
+            /* Decline closing nodes */
+            if (node.getNodeType() == Node.TEXT_NODE && !isClosingNode(node)
+                && ascendName != "") {
+                ascendName = ascendName.substring(0, ascendName.length() - 2);
+                csvHeaders.add(ascendName);
+                map.put(ascendName, nodeVal);
+            }
+        }
+    }
+
+    private Boolean isClosingNode(Node node) {
+        Matcher skipMatcher = SKIP_PATTERN.matcher(node.getNodeValue());
+        return skipMatcher.matches();
     }
 
     public String toCSV() {
@@ -105,11 +104,11 @@ class XMLConverter {
         rowStart = true;
 
         /* Write the rest */
-        for (HashMap row : csvValues) {
+        for (HashMap<String, String> row : csvValues) {
             for (String header : csvHeaders) {
                 String val = "";
                 if (row.containsKey(header)) {
-                    val = ((String) row.get(header)).replace(',', (char) 0);
+                    val = row.get(header).replaceAll(",", "");
                 }
                 if (rowStart) {
                     csvBuilder.append(val);
@@ -124,4 +123,3 @@ class XMLConverter {
         return csvBuilder.toString();
     }
 }
-

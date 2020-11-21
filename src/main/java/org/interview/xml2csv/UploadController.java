@@ -1,21 +1,14 @@
 package org.interview.xml2csv;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,10 +31,10 @@ public class UploadController {
     public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file,
             @RequestParam(name="outType", required=false, defaultValue="csv")
             String outType) {
-        InputStream xmlfp;
+        InputStream xml_istream;
         /* Receive the file */
         try {
-            xmlfp = file.getInputStream();
+            xml_istream = file.getInputStream();
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
@@ -50,7 +43,7 @@ public class UploadController {
         /* Parse the .xml file */
         XMLConverter converter;
         try {
-            converter = new XMLConverter(xmlfp);
+            converter = new XMLConverter(xml_istream);
         } catch (SAXException ex) {
             String errmsg = ex.toString();
             logger.info("Bad file format received: " + errmsg);
@@ -70,15 +63,16 @@ public class UploadController {
                     HttpStatus.NOT_IMPLEMENTED
             );
         }
-        return makeFileResponse(outHolder);
+        return makeFileResponse(outHolder, outType);
     }
 
-    private ResponseEntity makeFileResponse(String body) {
+    private ResponseEntity makeFileResponse(String body, String fileExt) {
         if (body == null) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=output.csv");
+        headers.add("Content-Disposition", String.format("attachment; filename=output.%s",
+                                                         fileExt));
 
         ResponseEntity response = new ResponseEntity<>(body, headers, HttpStatus.OK);
         return response;
