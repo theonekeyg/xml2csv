@@ -34,8 +34,8 @@ public class UploadController {
         /* Receive the file */
         try {
             xmlInputStream = file.getInputStream();
-        } catch (IOException ex) {
-            logger.error(ex.getMessage(), ex);
+        } catch (IOException exception) {
+            logger.error(exception.getMessage(), exception);
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
 
@@ -43,19 +43,24 @@ public class UploadController {
         XMLConverter converter;
         try {
             converter = new XMLConverter(xmlInputStream);
-        } catch (SAXException ex) {
-            String errmsg = ex.toString();
+        } catch (SAXException exception) {
+            String errmsg = exception.toString();
             logger.info("Bad file format received: " + errmsg);
             return new ResponseEntity<>(errmsg, HttpStatus.EXPECTATION_FAILED);
-        } catch (Exception ex) {
-            logger.error(ex.getMessage(), ex);
+        } catch (Exception exception) {
+            logger.error(exception.getMessage(), exception);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         /* Convert file into output format */
         String outHolder = null;
         if (outType.equals("csv")) {
-            outHolder = converter.toCSV();
+            try {
+                outHolder = converter.toCSV();
+            } catch (Exception exception) {
+                logger.error(exception.getMessage(), exception);
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } else {
             return new ResponseEntity<>(
                     String.format("output file format `%s` is not implemented", outType),
