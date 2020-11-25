@@ -16,12 +16,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 class XMLConverter {
-
-    private final Logger logger = LoggerFactory.getLogger(XMLConverter.class);
 
     private HashSet<String> csvHeaders = new HashSet<String>(10);
 
@@ -34,13 +29,13 @@ class XMLConverter {
      */
     private final Pattern SKIP_PATTERN = Pattern.compile("\n\\s+");
 
-    public XMLConverter(InputStream xml_istream) throws SAXParseException, SAXException,
+    public XMLConverter(InputStream xmlInputStream) throws SAXParseException, SAXException,
                                                  ParserConfigurationException,
                                                  IOException {
 
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder builder = factory.newDocumentBuilder();
-        final Document xmldoc = builder.parse(xml_istream);
+        final Document xmldoc = builder.parse(xmlInputStream);
 
         final NodeList allNodes = xmldoc.getElementsByTagName("*");
         if (allNodes.getLength() < 3) {

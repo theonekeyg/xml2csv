@@ -1,6 +1,5 @@
 package org.interview.xml2csv;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import org.xml.sax.SAXException;
@@ -31,10 +30,10 @@ public class UploadController {
     public ResponseEntity ProcessXML(@RequestParam("file") MultipartFile file,
             @RequestParam(name="outType", required=false, defaultValue="csv")
             String outType) {
-        InputStream xml_istream;
+        InputStream xmlInputStream;
         /* Receive the file */
         try {
-            xml_istream = file.getInputStream();
+            xmlInputStream = file.getInputStream();
         } catch (IOException ex) {
             logger.error(ex.getMessage(), ex);
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
@@ -43,7 +42,7 @@ public class UploadController {
         /* Parse the .xml file */
         XMLConverter converter;
         try {
-            converter = new XMLConverter(xml_istream);
+            converter = new XMLConverter(xmlInputStream);
         } catch (SAXException ex) {
             String errmsg = ex.toString();
             logger.info("Bad file format received: " + errmsg);
@@ -73,8 +72,6 @@ public class UploadController {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Disposition", String.format("attachment; filename=output.%s",
                                                          fileExt));
-
-        ResponseEntity response = new ResponseEntity<>(body, headers, HttpStatus.OK);
-        return response;
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 }
