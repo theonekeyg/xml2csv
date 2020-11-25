@@ -37,7 +37,7 @@ class XMLConverter {
     }
 
     public String toCSV() throws TransformerConfigurationException, TransformerException {
-        File stylesheet = new File("src/main/resources/style.xml");
+        File stylesheet = new File("src/main/resources/style.xsl");
         StreamSource stylesource = new StreamSource(stylesheet);
 
         Transformer transformer = TransformerFactory.newInstance()
