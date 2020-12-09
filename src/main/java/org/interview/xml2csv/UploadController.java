@@ -42,6 +42,11 @@ public class UploadController {
 
         InputStream xmlInputStream = file.getInputStream();
         XMLConverter converter = new XMLConverter(xmlInputStream);
+        try {
+            xmlInputStream.close();
+        } catch (IOException ex) {
+            System.err.println(ex.getStackTrace());
+        }
         String outHolder = converter.toCSV();
 
         return makeFileResponse(outHolder, outType);
@@ -54,6 +59,7 @@ public class UploadController {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Disposition", String.format("attachment; filename=output.%s",
                                                          fileExt));
+        headers.add("Content-Type", "text/csv; charset=UTF-8");
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 }
